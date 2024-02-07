@@ -27,7 +27,7 @@ The meanings of the radicals are highlighted in WaniKani, and in the parsed data
 
 ## Anki Deck Creation
 ```anki_deck_creator.py``` does not work yet. Seems like library for generating anki decks have some troubles. Nevertheless,
-I have made Anki deck manually. You can access it by the link. Since the missed radicals are added using the svg format, I needed
+I have made Anki deck manually. You can access it by the [link](https://ankiweb.net/shared/info/219087015?cb=1707314019409). Since the missed radicals are added using the svg format, I needed
 to do some magic with CSS to display it correctly.
 
 After all actions, Anki card looks like this:<br>
