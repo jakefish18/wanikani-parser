@@ -30,8 +30,8 @@ The meanings of the radicals are highlighted in WaniKani, and in the parsed data
 I have made Anki deck manually. You can access it by the link. Since the missed radicals are added using the svg format, I needed
 to do some magic with CSS to display it correctly.
 
-After all actions, Anki card looks like this:
-<img alt="img.png" src="img.png" width="400"/>
+After all actions, Anki card looks like this:<br>
+<img alt="img.png" src="https://github.com/jakefish18/wanikani-radicals-parser/blob/main/card_appearnce_in_anki.png" width="400"/>
 
 ## Conclusion
 Of course, these cards does not look very attractive, but you can freely use this parser to make your own Anki deck with your
