@@ -2,9 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class WaniKaniRadical:
-    level: int
-    symbol: str
+class Kanji:
+    level: str
     meaning: str
     mnemonic: str
-

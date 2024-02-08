@@ -5,7 +5,7 @@ logging.basicConfig(filename="output/logs.log", level=logging.INFO, filemode="w"
 
 from bs4 import BeautifulSoup
 
-from models import WaniKaniRadical
+from src.models.wk_radical import WaniKaniRadical
 
 
 def get_page_soup(url: str) -> BeautifulSoup:
