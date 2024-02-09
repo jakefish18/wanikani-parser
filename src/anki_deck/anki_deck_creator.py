@@ -1,7 +1,7 @@
 import genanki
 
 from src.models.wk_radical import WaniKaniRadical
-from src.parsers.wk_radical_parser import wanikani_radicals_parser, import_from_csv
+from src.parsers.wk_radical import wanikani_radicals_parser, import_from_csv
 from random import randint
 
 
