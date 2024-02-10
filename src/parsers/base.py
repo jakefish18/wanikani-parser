@@ -5,6 +5,11 @@ from bs4 import BeautifulSoup
 from src.core import settings
 
 
+class Mnemonic:
+    mnemonic: str
+    hint: str
+
+
 class BaseParser:
     def __init__(self):
         # Difficulty levels are used while parsing.
@@ -12,6 +17,11 @@ class BaseParser:
         # https://wanikani.com/radicals?difficulty=pleasant
         self.difficulty_levels = ["pleasant", "painful", "death", "hell", "paradise", "reality"]
         self.request_headers = settings.request_headers
+
+        # Highlighting class names.
+        self.radical_highlight_class_name = "radical-highlight"
+        self.kanji_highlight_class_name = "kanji-highlight"
+        self.reading_highlight_class_name = "reading-highlight"
 
     def _get_page_soup(self, page_url: str) -> BeautifulSoup:
         """
@@ -65,6 +75,53 @@ class BaseParser:
             highlighted_words.append(element.text)
 
         return highlighted_words
+
+    def _get_highlighted_radicals(self, soup: BeautifulSoup) -> list[str]:
+        """
+        Getting the highlighted radicals from the soup.
+        """
+        return self._get_highlighted_words(soup, "span", self.radical_highlight_class_name)
+
+    def _get_highlighted_kanji(self, soup: BeautifulSoup) -> list[str]:
+        """
+        Getting the highlighted kanji from the soup.
+        """
+        return self._get_highlighted_words(soup, "span", self.kanji_highlight_class_name)
+
+    def _get_highlighted_readings(self, soup: BeautifulSoup) -> list[str]:
+        """
+        Getting the highlighted readings from the soup.
+        """
+        return self._get_highlighted_words(soup, "span", self.reading_highlight_class_name)
+
+    def _get_element_level(self, soup: BeautifulSoup) -> int:
+        """
+        Getting the radical, kanji or word level from the soup.
+        """
+        return soup.find("a", class_="page-header__icon page-header__icon--level").text.strip()
+
+    def _get_mnemonic(self, soup, mnemonic_section_class: str) -> Mnemonic:
+        """
+        Getting the mnemonic of kanji, radicals or word from the soup.
+        All mnemonics use the same classes for mnemonic text and hint,
+        but some mnemonics can have not only one mnemonic on page,
+        kanji, for example, have two mnemonics: one for reading and one for meaning.
+        If page can have multiple mnemonics, then it's needed to pass the part of the page,
+        where is only one mnemonic. Also, mnemonic can have note, so function returns Mnemonic object,
+        which contains the note too.
+
+        Returns:
+            Mnemonic: Mnemonic class object.
+        """
+        mnemonic_section = soup.find("section", class_=mnemonic_section_class)
+
+        mnemonic = mnemonic_section.find("p", class_="subject-section__text").text
+        hint = mnemonic_section.find("p", class_="subject-hint__text").text
+
+        return Mnemonic(
+            mnemonic=mnemonic,
+            hint=hint
+        )
 
     def _highlight_text(self, text: str, word_to_highlight: str) -> str:
         """
