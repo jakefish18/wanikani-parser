@@ -2,22 +2,26 @@ import requests
 import logging
 logging.basicConfig(level=logging.INFO, filename="logs/kanji_parser.log", filemode="w")
 
-from src.crud import CrudWKRadical, CrudKanjiReading, CrudKanjiMeaning, CrudKanjiRadical
+from src.crud import CrudWKRadical, CrudKanjiReading, CrudKanjiMeaning, CrudKanjiRadical, CrudKanji
 from src.parsers.base import BaseParser
 from src.models import Kanji, KanjiMeaning, KanjiReading, KanjiRadical, WKRadical
 from src.database import SessionLocal
 from src.core import settings
 from src.parsers.base import Mnemonic
+from src.parsers import WKRadicalsParser
 
 
 class Meaning:
-    meaning: str
-    is_primary: bool = False
+    def __init__(self, meaning: str, is_primary: bool = False) -> None:
+        self.meaning = meaning
+        self.is_primary = is_primary
+
 
 class Reading:
-    reading: str
-    type: str
-    is_primary: bool = False
+    def __init__(self, reading: str, reading_type: str, is_primary: bool = False) -> None:
+        self.reading = reading
+        self.type = reading_type
+        self.is_primary = is_primary
 
 
 class KanjiParser(BaseParser):
@@ -25,10 +29,9 @@ class KanjiParser(BaseParser):
         super().__init__()
 
         # The class name of the "a" tag which has link to the radical page.
-        self.kanji_page_link_class = ("subject-character subject-character--kanji "
-                                      "subject-character--grid subject-character--unlocked")
+        self.kanji_page_link_class = "subject-character subject-character--kanji subject-character--grid subject-character--unlocked"
 
-        self.crud_kanji = CrudWKRadical(Kanji)
+        self.crud_kanji = CrudKanji(Kanji)
         self.crud_kanji_meaning = CrudKanjiMeaning(KanjiMeaning)
         self.crud_kanji_reading = CrudKanjiReading(KanjiReading)
         self.crud_kanji_radical = CrudKanjiRadical(KanjiRadical)
@@ -39,14 +42,22 @@ class KanjiParser(BaseParser):
         Run the parser.
         """
         for difficulty_level in self.difficulty_levels:
-            kanji_list_page_url = f"{settings.WANIKANI_BASE_URL}/radicals?difficulty={difficulty_level}"
+            kanji_list_page_url = f"{settings.WANIKANI_BASE_URL}/kanji?difficulty={difficulty_level}"
             soup = self._get_page_soup(kanji_list_page_url)
             kanji_page_urls = self._get_element_links(soup, self.kanji_page_link_class)
             total_kanji_count = len(kanji_page_urls)
 
             for i, kanji_page_url in enumerate(kanji_page_urls):
-                self._parse_kanji_page(kanji_page_url)
+                if not self._is_kanji_exists(kanji_page_url):
+                    self._parse_kanji_page(kanji_page_url)
+                else:
+                    logging.warning(f"{kanji_page_url} already exists in the database.")
                 logging.info(f"Processed {kanji_page_url} [{i + 1}/{total_kanji_count}]")
+
+    def _is_kanji_exists(self, url: str) -> bool:
+        """Checking if a kanji exists in the database by url."""
+        with SessionLocal() as db:
+            return self.crud_kanji.is_kanji_by_url(db, url)
 
     def _parse_kanji_page(self, kanji_page_url: str) -> Kanji:
         """
@@ -61,9 +72,9 @@ class KanjiParser(BaseParser):
         soup = self._get_page_soup(kanji_page_url)
 
         level = self._get_element_level(soup)
-        symbol = soup.find("span", class_="page-header__icon page-header__icon--radical").text.strip()
+        symbol = soup.find("span", class_="page-header__icon page-header__icon--kanji").text.strip()
 
-        radical_ids: list[int] = self._get_kanji_radicals(soup)
+        radical_ids: list[int] = self._get_kanji_radicals(soup.find("section", {"id": "section-components"}))
 
         meanings: list[Meaning] = self._get_kanji_meanings(soup)
         meaning_mnemonic = self._get_mnemonic(soup, "subject-section subject-section--meaning")
@@ -85,7 +96,8 @@ class KanjiParser(BaseParser):
 
         with SessionLocal() as db:
             kanji = Kanji(
-                symbol=symbol
+                symbol=symbol,
+                url=kanji_page_url
             )
             kanji = self.crud_kanji.create(db, kanji)
 
@@ -104,12 +116,20 @@ class KanjiParser(BaseParser):
         Returning kanji radicals ids.
         """
         kanji_radical_ids = []
-        for kanji_radical_span in soup.find_all("span", class_="subject-character__characters"):
-            kanji_radical_symbol = kanji_radical_span.text
+        for kanji_radical_span in soup.find_all("span", class_="subject-character__meaning"):
+            kanji_radical_meaning = kanji_radical_span.text
 
             with SessionLocal() as db:
-                kanji_radical_id = self.crud_wk_radical.get_by_symbol(db, kanji_radical_symbol).id
-                kanji_radical_ids.append(kanji_radical_id)
+                is_wk_radical = self.crud_wk_radical.is_radical_by_meaning(db, kanji_radical_meaning)
+
+                if not is_wk_radical:
+                    logging.critical(f"Radical {kanji_radical_meaning} doesn't exist in database")
+                    logging.info(f"Running wk_radicals parser")
+                    wk_radical_parser = WKRadicalsParser()
+                    wk_radical_parser.run(is_download_image=True)
+
+                wk_radical = self.crud_wk_radical.get_by_meaning(db, kanji_radical_meaning)
+                kanji_radical_ids.append(wk_radical.id)
 
         return kanji_radical_ids
 
@@ -156,7 +176,7 @@ class KanjiParser(BaseParser):
         for reading_type_div in soup.find_all("div", class_="subject-readings__reading"):
             reading_type = reading_type_div.find("h3", class_="subject-readings__reading-title").text
             reading_text = reading_type_div.find("p", class_="subject-readings__reading-items").text
-            is_primary = reading_type_div.get("class").find("subject-readings__reading--primary") != -1
+            is_primary = "subject-readings__reading--primary" in reading_type_div.get("class")
 
             for reading in reading_text.split(", "):
                 # Reading type is primary reading type if it has specific class.
@@ -164,7 +184,7 @@ class KanjiParser(BaseParser):
 
         return readings
 
-    def _create_meaning_bulk(self, kanji: Kanji, meanings: Meaning, meaning_mnemonic: Mnemonic) -> list[KanjiMeaning]:
+    def _create_meaning_bulk(self, kanji: Kanji, meanings: list[Meaning], meaning_mnemonic: Mnemonic) -> list[KanjiMeaning]:
         meaning_bulk = []
 
         for meaning in meanings:
@@ -190,14 +210,14 @@ class KanjiParser(BaseParser):
 
         return meaning_bulk
 
-    def _create_reading_bulk(self, kanji: Kanji, readings: Reading, reading_mnemonic: Mnemonic) -> list[KanjiReading]:
+    def _create_reading_bulk(self, kanji: Kanji, readings: list[Reading], reading_mnemonic: Mnemonic) -> list[KanjiReading]:
         reading_bulk = []
 
         for reading in readings:
             # Reading doesn't have mnemonic if it's not primary.
             if reading.is_primary:
                 reading_bulk.append(
-                    KanjiMeaning(
+                    KanjiReading(
                         kanji_id=kanji.id,
                         reading=reading.reading,
                         is_primary=reading.is_primary,
@@ -207,12 +227,14 @@ class KanjiParser(BaseParser):
                 )
             else:
                 reading_bulk.append(
-                    KanjiMeaning(
+                    KanjiReading(
                         kanji_id=kanji.id,
-                        meaning=reading.reading,
+                        reading=reading.reading,
                         is_primary=reading.is_primary,
                     )
                 )
+
+        return reading_bulk
     def _create_radical_bulk(self, kanji: Kanji, radical_ids: list[int]) -> list[KanjiRadical]:
         radical_bulk = []
 

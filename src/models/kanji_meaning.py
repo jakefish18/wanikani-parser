@@ -11,11 +11,11 @@ class KanjiMeaning(Base):
     __tablename__ = "kanji_meanings"
 
     id = Column(Integer, primary_key=True, index=True)
-    kanji_id = Column(Integer, ForeignKey("kanji.id"))
+    kanji_id = Column(Integer, ForeignKey("kanji.id", ondelete="CASCADE"))
     meaning = Column(String)
     is_primary = Column(Boolean, default=False)
     mnemonic = Column(String, nullable=True)
     mnemonic_hint = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    kanji = relationship("Kanji", back_populates="radicals", uselist=False)
+    kanji = relationship("Kanji", back_populates="meanings", uselist=False)

@@ -12,6 +12,7 @@ class Kanji(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String)
+    url = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     radicals = relationship("KanjiRadical", back_populates="kanji")

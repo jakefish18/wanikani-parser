@@ -6,8 +6,9 @@ from src.core import settings
 
 
 class Mnemonic:
-    mnemonic: str
-    hint: str
+    def __init__(self, mnemonic: str, hint: str) -> None:
+        self.mnemonic = mnemonic
+        self.hint = hint
 
 
 class BaseParser:
@@ -52,9 +53,9 @@ class BaseParser:
 
         ol_elements = soup.find_all("a", class_=element_class_name)
 
-        for radical_li in ol_elements:
-            radical_page_url = radical_li.get("href")
-            element_urls.append(radical_page_url)
+        for element_li in ol_elements:
+            element_page_url = element_li.get("href")
+            element_urls.append(element_page_url)
 
         return element_urls
 
@@ -116,7 +117,12 @@ class BaseParser:
         mnemonic_section = soup.find("section", class_=mnemonic_section_class)
 
         mnemonic = mnemonic_section.find("p", class_="subject-section__text").text
-        hint = mnemonic_section.find("p", class_="subject-hint__text").text
+        hint = mnemonic_section.find("p", class_="subject-hint__text")
+
+        if hint:
+            hint = hint.text
+        else:
+            hint = ""
 
         return Mnemonic(
             mnemonic=mnemonic,

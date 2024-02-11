@@ -35,8 +35,16 @@ class WKRadicalsParser(BaseParser):
             total_radical_count = len(radical_page_urls)
 
             for i, radical_page_url in enumerate(radical_page_urls):
-                self._parse_radical_page(radical_page_url, is_download_image=is_download_image)
+                if not self._is_radical_exists(radical_page_url):
+                    self._parse_radical_page(radical_page_url, is_download_image=is_download_image)
+                else:
+                    logging.warning(f"{radical_page_url} already exists in the database.")
                 logging.info(f"Processed {radical_page_url} [{i + 1}/{total_radical_count}]")
+
+    def _is_radical_exists(self, url: str) -> bool:
+        """Checking if radical exists in the database by its url."""
+        with SessionLocal() as db:
+            return self.crud_wk_radical.is_radical_by_url(db, url)
 
     def _parse_radical_page(self, radical_page_url: str, is_download_image: bool = True) -> WKRadical:
         """
@@ -55,11 +63,17 @@ class WKRadicalsParser(BaseParser):
         mnemonic = soup.find("p", class_="subject-section__text").text.strip()
 
         symbol = soup.find("span", class_="page-header__icon page-header__icon--radical").text.strip()
-        symbol_image_url = soup.find("wk-character-image", class_="radical-image").get("src")
+
         # Symbol is stored as an image, if it's WaniKani custom radical.
-        if symbol_image_url and is_download_image:
-            with open(f"output/images/{meaning}.svg", "wb") as image_file:
-                image_file.write(requests.get(symbol_image_url).content)
+        symbol_image_url = ""
+        symbol_image_element = soup.find("wk-character-image", class_="radical-image")
+
+        if symbol_image_element:
+            symbol_image_url = symbol_image_element.get("src")
+
+            if is_download_image:
+                with open(f"output/images/{meaning}.svg", "wb") as image_file:
+                    image_file.write(requests.get(symbol_image_url).content)
 
         # Highlighting radical meaning in mnemonic with the upper case.
         highlighted_radicals = self._get_highlighted_radicals(soup)
@@ -73,7 +87,8 @@ class WKRadicalsParser(BaseParser):
                 symbol=symbol,
                 meaning=meaning,
                 mnemonic=mnemonic,
-                is_symbol_image=bool(symbol_image_url)
+                is_symbol_image=bool(symbol_image_url),
+                url=radical_page_url
             )
             self.crud_wk_radical.create(db, wk_radical)
 
