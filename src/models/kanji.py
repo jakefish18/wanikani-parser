@@ -11,6 +11,7 @@ class Kanji(Base):
     __tablename__ = "kanji"
 
     id = Column(Integer, primary_key=True, index=True)
+    level=Column(Integer)
     symbol = Column(String)
     url = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

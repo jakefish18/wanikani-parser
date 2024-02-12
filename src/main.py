@@ -3,8 +3,10 @@ from src.database import engine, Base
 import src.models
 Base.metadata.create_all(engine)
 
+from src.parsers import KanjiParser, WKRadicalsParser
 
-from src.parsers import KanjiParser
+wk_radical_parser = WKRadicalsParser()
+wk_radical_parser.run()
 
 kanji_parser = KanjiParser()
 kanji_parser.run()

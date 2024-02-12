@@ -96,6 +96,7 @@ class KanjiParser(BaseParser):
 
         with SessionLocal() as db:
             kanji = Kanji(
+                level=level,
                 symbol=symbol,
                 url=kanji_page_url
             )
@@ -174,13 +175,16 @@ class KanjiParser(BaseParser):
         readings = []
 
         for reading_type_div in soup.find_all("div", class_="subject-readings__reading"):
-            reading_type = reading_type_div.find("h3", class_="subject-readings__reading-title").text
-            reading_text = reading_type_div.find("p", class_="subject-readings__reading-items").text
+            reading_type = reading_type_div.find("h3", class_="subject-readings__reading-title").text.strip()
+            reading_text = reading_type_div.find("p", class_="subject-readings__reading-items").text.strip()
             is_primary = "subject-readings__reading--primary" in reading_type_div.get("class")
+
+            if reading_text == "None":
+                continue
 
             for reading in reading_text.split(", "):
                 # Reading type is primary reading type if it has specific class.
-                readings.append(Reading(reading=reading, reading_type=reading_type, is_primary=is_primary))
+                readings.append(Reading(reading=reading.strip(), reading_type=reading_type, is_primary=is_primary))
 
         return readings
 
