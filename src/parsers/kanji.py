@@ -224,6 +224,7 @@ class KanjiParser(BaseParser):
                     KanjiReading(
                         kanji_id=kanji.id,
                         reading=reading.reading,
+                        type=reading.type,
                         is_primary=reading.is_primary,
                         mnemonic=reading_mnemonic.mnemonic,
                         mnemonic_hint=reading_mnemonic.hint
@@ -233,8 +234,9 @@ class KanjiParser(BaseParser):
                 reading_bulk.append(
                     KanjiReading(
                         kanji_id=kanji.id,
+                        type=reading.type,
                         reading=reading.reading,
-                        is_primary=reading.is_primary,
+                        is_primary=reading.is_primary
                     )
                 )
 
