@@ -165,3 +165,4 @@ cython_debug/
 /output/wanikani_radicals.csv
 /output/wanikani_radicals.apkg
 /src/output/images/*
+/src/output/*.csv
