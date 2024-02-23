@@ -8,12 +8,16 @@ charset-normalizer==3.3.2
 chevron==0.14.0
 cssselect2==0.7.0
 defusedxml==0.7.1
+environs==10.3.0
 frozendict==2.4.0
 genanki==0.13.1
 greenlet==3.0.3
 idna==3.6
+marshmallow==3.20.2
+packaging==23.2
 pillow==10.2.0
 pycparser==2.21
+python-dotenv==1.0.1
 PyYAML==6.0.1
 requests==2.31.0
 soupsieve==2.5
