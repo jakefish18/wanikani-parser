@@ -16,7 +16,7 @@ class CrudKanji(CrudBase[Kanji]):
         return self.get_by_url(db, url) != None
 
     def get_by_url(self, db: Session, url: str) -> Kanji:
-        """Geting a kanji by its url."""
+        """Getting a kanji by its url."""
         return db.query(Kanji).filter(Kanji.url == url).first()
 
     def get_by_level(self, db: Session, before_level: int) -> list[Kanji]:

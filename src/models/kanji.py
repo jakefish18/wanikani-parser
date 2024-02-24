@@ -11,9 +11,9 @@ class Kanji(Base):
     __tablename__ = "kanji"
 
     id = Column(Integer, primary_key=True, index=True)
-    level=Column(Integer)
+    level = Column(Integer)
     symbol = Column(String)
-    url = Column(String)
+    url = Column(String, unique=True, index=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     radicals = relationship("KanjiRadical", back_populates="kanji")

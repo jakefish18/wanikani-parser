@@ -10,6 +10,7 @@ class Word(Base):
     __tablename__ = "words"
 
     id = Column(Integer, primary_key=True, index=True)
+    url = Column(String, unique=True, index=True)
     word = Column(String)
     meaning = Column(String)
     mnemonic = Column(String)
