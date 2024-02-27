@@ -7,21 +7,8 @@ from src.parsers.base import BaseParser
 from src.models import Kanji, KanjiMeaning, KanjiReading, KanjiRadical, WKRadical
 from src.database import SessionLocal
 from src.core import settings
-from src.parsers.base import Mnemonic
+from src.parsers.base import Mnemonic, Reading, Meaning
 from src.parsers import WKRadicalsParser
-
-
-class Meaning:
-    def __init__(self, meaning: str, is_primary: bool = False) -> None:
-        self.meaning = meaning
-        self.is_primary = is_primary
-
-
-class Reading:
-    def __init__(self, reading: str, reading_type: str, is_primary: bool = False) -> None:
-        self.reading = reading
-        self.type = reading_type
-        self.is_primary = is_primary
 
 
 class KanjiParser(BaseParser):
@@ -76,7 +63,7 @@ class KanjiParser(BaseParser):
 
         radical_ids: list[int] = self._get_kanji_radicals(soup.find("section", {"id": "section-components"}))
 
-        meanings: list[Meaning] = self._get_kanji_meanings(soup)
+        meanings: list[Meaning] = self._get_element_meanings(soup)
         meaning_mnemonic = self._get_mnemonic(soup, "subject-section subject-section--meaning")
 
         readings: list[Reading] = self._get_kanji_readings(soup)
@@ -133,31 +120,6 @@ class KanjiParser(BaseParser):
                 kanji_radical_ids.append(wk_radical.id)
 
         return kanji_radical_ids
-
-    def _get_kanji_meanings(self, soup) -> list[Meaning]:
-        """
-        Getting kanji meaning.
-        One kanji can have multiple meanings: one primary meaning and some alternative meanings.
-        For example, https://www.wanikani.com/kanji/%E4%B8%8A.
-
-        Parameters:
-            soup: BeautifulSoup - BeautifulSoup object.
-
-        Returns:
-            list[Meaning] - list of the meanings.
-        """
-        meanings = []
-
-        for div_meaning in soup.find_all("div", class_="subject-section__meanings"):
-            meaning_type = div_meaning.find("h2", class_="subject-section__meanings-title").text
-            meaning_text = div_meaning.find("p", class_="subject-section__meanings-items").text
-
-            if meaning_type == "Primary":
-                meanings.append(Meaning(meaning=meaning_text, is_primary=True))
-            else:
-                meanings.extend([Meaning(meaning=meaning) for meaning in meaning_text.split(", ")])
-
-        return meanings
 
     def _get_kanji_readings(self, soup) -> list[Reading]:
         """

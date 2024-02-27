@@ -73,8 +73,14 @@ def get_kanji_radicals(kanji: Kanji) -> str:
         str: The radicals joined with + sign.
     """
     kanji_radicals = []
+
     for kanji_radical in kanji.radicals:
-        kanji_radicals.append(kanji_radical.radical.symbol)
+        # Some radicals don't plain symbol.
+        if kanji_radical.radical.symbol:
+            kanji_radicals.append(kanji_radical.radical.symbol)
+        else:
+            kanji_radicals.append(kanji_radical.radical.meaning
+                                  )
     return " + ".join(kanji_radicals)
 
 def get_kanji_by_level(before_level: int) -> list[Kanji]:
@@ -102,6 +108,7 @@ def get_kanji_csv_rows(before_level: int) -> list[list[str]]:
             kanji.level,
             kanji.symbol,
             kanji_radicals,
+            kanji_primary_meaning,
             kanji_primary_readings,
             kanji_reading_mnemonic,
             kanji_reading_mnemonic_note,

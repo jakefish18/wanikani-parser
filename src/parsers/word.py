@@ -3,7 +3,7 @@ import logging
 logging.basicConfig(level=logging.INFO, filename="logs/kanji_parser.log", filemode="w")
 
 from src.crud import CrudWKRadical, CrudKanjiReading, CrudKanjiMeaning, CrudKanjiRadical, CrudKanji, CrudWord
-from src.parsers.base import BaseParser
+from src.parsers.base import BaseParser, Meaning
 from src.models import Kanji, KanjiMeaning, KanjiReading, KanjiRadical, WKRadical, Word
 from src.database import SessionLocal
 from src.core import settings
@@ -60,3 +60,33 @@ class WordParser(BaseParser):
         soup = self._get_page_soup(word_page_url)
 
         level = self._get_element_level(soup)
+        word_symbols = soup.find("span", class_="page-header__icon page-header__icon--vocabulary").text.strip()
+        word_meanings: list[Meaning] = self._get_element_meanings(soup)
+
+    def _get_meaning_explanation(self, soup):
+        """"""
+        pass
+
+    def _get_reading(self, soup):
+        """
+        """
+        pass
+
+    def _get_reading_explanation(self, soup):
+        """
+        """
+        pass
+
+    def _get_reading_audio(self, soup):
+        """
+        """
+        pass
+
+    def _get_context_sentences(self, soup):
+        """"""
+        pass
+
+
+if __name__ == "__main__":
+    word_parser = WordParser()
+    word_parser.run()

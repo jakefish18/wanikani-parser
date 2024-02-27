@@ -10,6 +10,18 @@ class Mnemonic:
         self.mnemonic = mnemonic
         self.hint = hint
 
+class Meaning:
+    def __init__(self, meaning: str, is_primary: bool = False) -> None:
+        self.meaning = meaning
+        self.is_primary = is_primary
+
+
+class Reading:
+    def __init__(self, reading: str, reading_type: str, is_primary: bool = False) -> None:
+        self.reading = reading
+        self.type = reading_type
+        self.is_primary = is_primary
+
 
 class BaseParser:
     def __init__(self):
@@ -58,6 +70,33 @@ class BaseParser:
             element_urls.append(element_page_url)
 
         return element_urls
+
+    def _get_element_meanings(self, soup: BeautifulSoup) -> list[Meaning]:
+        """
+        Get the element meanings.
+        Element is understood as kanji or word,
+        since kanji and word pages have the same layout for meaning blocks.
+        One element can have multiple meanings: one primary meaning and some alternative meanings.
+        For example, https://www.wanikani.com/vocabulary/%E4%B8%8A.
+
+        Parameters:
+            soup: BeautifulSoup - BeautifulSoup object.
+
+        Returns:
+            list[Meaning] - list of the meanings.
+        """
+        meanings = []
+
+        for div_meaning in soup.find_all("div", class_="subject-section__meanings"):
+            meaning_type = div_meaning.find("h2", class_="subject-section__meanings-title").text
+            meaning_text = div_meaning.find("p", class_="subject-section__meanings-items").text
+
+            if meaning_type == "Primary":
+                meanings.append(Meaning(meaning=meaning_text, is_primary=True))
+            else:
+                meanings.extend([Meaning(meaning=meaning) for meaning in meaning_text.split(", ")])
+
+        return meanings
 
     def _get_highlighted_words(self, soup: BeautifulSoup, tag_name: str, class_name: str) -> list[str]:
         """
