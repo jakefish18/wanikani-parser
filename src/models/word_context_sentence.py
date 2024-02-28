@@ -8,10 +8,10 @@ from src.database import Base
 
 
 class WordContextSentence(Base):
-    __tablename__ = "word_context_sentence"
+    __tablename__ = "word_context_sentences"
 
     id = Column(Integer, primary_key=True, index=True)
-    word_id = Column(Integer, ForeignKey("word.id", ondelete="CASCADE"))
+    word_id = Column(Integer, ForeignKey("words.id", ondelete="CASCADE"))
     japanese = Column(String)
     english = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

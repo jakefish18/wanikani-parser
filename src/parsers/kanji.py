@@ -1,6 +1,4 @@
-import requests
 import logging
-logging.basicConfig(level=logging.INFO, filename="logs/kanji_parser.log", filemode="w")
 
 from src.crud import CrudWKRadical, CrudKanjiReading, CrudKanjiMeaning, CrudKanjiRadical, CrudKanji
 from src.parsers.base import BaseParser

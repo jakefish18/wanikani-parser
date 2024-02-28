@@ -1,6 +1,4 @@
-import requests
 import logging
-logging.basicConfig(level=logging.INFO, filename="logs/wk_radical_parser.log", filemode="w")
 
 from src.crud import CrudWKRadical
 from src.parsers.base import BaseParser

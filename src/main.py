@@ -1,3 +1,7 @@
+# Logging.
+import logging
+logging.basicConfig(level=logging.INFO, filename="logs/logs.log", filemode="w")
+
 # Database initialization.
 from src.database import engine, Base
 import src.models

@@ -1,13 +1,8 @@
-import requests
 import logging
 
-from bs4 import BeautifulSoup
-
-logging.basicConfig(level=logging.INFO, filename="logs/kanji_parser.log", filemode="w")
-
-from src.crud import CrudWKRadical, CrudKanjiReading, CrudKanjiMeaning, CrudKanjiRadical, CrudKanji, CrudWord
+from src.crud import CrudWord, CrudWordContextSentence, CrudWordMeaning, CrudWordUsePatterns
 from src.parsers.base import BaseParser, Meaning, Mnemonic
-from src.models import Kanji, KanjiMeaning, KanjiReading, KanjiRadical, WKRadical, Word
+from src.models import Word, WordMeaning, WordUsePattern, WordContextSentence
 from src.database import SessionLocal
 from src.core import settings
 
@@ -53,12 +48,10 @@ class WordParser(BaseParser):
         self.word_page_link_class = ("subject-character subject-character--vocabulary "
                                      "subject-character--grid subject-character--unlocked")
 
-        self.crud_kanji = CrudKanji(Kanji)
-        self.crud_kanji_meaning = CrudKanjiMeaning(KanjiMeaning)
-        self.crud_kanji_reading = CrudKanjiReading(KanjiReading)
-        self.crud_kanji_radical = CrudKanjiRadical(KanjiRadical)
-        self.crud_wk_radical = CrudWKRadical(WKRadical)
         self.crud_word = CrudWord(Word)
+        self.crud_word_context_sentence = CrudWordContextSentence(WordContextSentence)
+        self.crud_word_use_pattern = CrudWordUsePatterns(WordUsePattern)
+        self.crud_word_meaning = CrudWordMeaning(WordMeaning)
 
     def run(self) -> None:
         """
@@ -102,13 +95,46 @@ class WordParser(BaseParser):
 
         reading = self._get_reading(soup)
         reading_explanation: Mnemonic = self._get_mnemonic(soup, "subject-section--reading")
-        reading_audio_file_path = ""
 
         if self.is_download_audio:
-            reading_audio_file_path = self._download_reading_audio(soup, AudioType.MPEG, symbols)
+            self._download_reading_audio(soup, symbols, AudioType.MPEG)
 
-        context_sentences: list[ContextSentence] = self._get_context_sentences(soup)
-        use_patterns: list[UsePattern] = self._get_use_patterns(soup)
+        context_sentences: list[WordContextSentence] = self._get_context_sentences(soup)
+        use_patterns: list[WordUsePattern] = self._get_use_patterns(soup)
+
+        # Insert all data into the database.
+        with SessionLocal() as db:
+            # Insert word.
+            word = self.crud_word.create(db, Word(
+                url=word_page_url,
+                symbols=symbols,
+                reading=reading,
+                reading_audio_filename=f"audio_{symbols}.{AudioType.MPEG}"
+            ))
+
+            # Insert context sentences.
+            for context_sentence in context_sentences:
+                context_sentence.word_id = word.id
+
+            self.crud_word_context_sentence.create_many(db, context_sentences)
+
+            # Insert meanings.
+            meaning_bulk = []
+            for meaning in meanings:
+                meaning_bulk.append(WordMeaning(
+                    word_id=word.id,
+                    meaning=meaning.meaning,
+                    is_primary=meaning.is_primary,
+                    explanation=meaning_explanation.mnemonic
+                ))
+
+            self.crud_word_meaning.create_many(db, meaning_bulk)
+
+            # Insert use patterns.
+            for use_pattern in use_patterns:
+                use_pattern.word_id = word.id
+
+            self.crud_word_use_pattern.create_many(db, use_patterns)
 
 
     def _get_reading(self, soup):
@@ -120,7 +146,7 @@ class WordParser(BaseParser):
         """
         return soup.find("div", class_="reading-with-audio__reading").text.strip()
 
-    def _download_reading_audio(self, soup, prefered_file_type: AudioType, meaning: str) -> str:
+    def _download_reading_audio(self, soup, symbols: str, prefered_file_type: str) -> str:
         """
         Get reading audio.
         There are two audio for the vocabulary word:
@@ -146,12 +172,12 @@ class WordParser(BaseParser):
             case _:
                 raise ValueError(f"There is no type {prefered_file_type} for audio.")
 
-        file_path = f"output/audio/audio_{meaning}.{prefered_file_type}"
+        file_path = f"output/audio/audio_{symbols}.{prefered_file_type}"
         self._download_file(file_path, downloading_audio_url)
 
         return file_path
 
-    def _get_use_patterns(self, soup) -> list[UsePattern]:
+    def _get_use_patterns(self, soup) -> list[WordUsePattern]:
         """
         Get a list of the use patterns for the word.
 
@@ -159,9 +185,9 @@ class WordParser(BaseParser):
             soup: BeautifulSoup object.
 
         Returns:
-            use_patterns: list[UsePattern] - list of use patterns.
+            use_patterns: list[WordUsePattern] - list of use patterns.
         """
-        use_patterns: list[UsePattern] = []
+        use_patterns: list[WordUsePattern] = []
 
         use_pattern_list = soup.find_all("a", class_="subject-collocations__pattern-name")
         example_lists = soup.find_all("li", class_="subject-collocations__pattern-collocation")
@@ -171,14 +197,10 @@ class WordParser(BaseParser):
                 japanese_sentence, english_sentence = example_block.find_all("p")
                 japanese_sentence, english_sentence = japanese_sentence.text.strip(), english_sentence.text.strip()
 
-                use_pattern_example = UsePatternExample(
+                use_patterns.append(WordUsePattern(
+                    pattern=use_pattern.text.strip(),
                     japanese=japanese_sentence,
                     english=english_sentence
-                )
-
-                use_patterns.append(UsePattern(
-                    pattern=use_pattern.text.strip(),
-                    example=use_pattern_example
                 ))
 
         return use_patterns
@@ -201,7 +223,7 @@ class WordParser(BaseParser):
             japanese_sentence, english_sentence = japanese_sentence.text.strip(), english_sentence.text.strip()
 
             context_sentences.append(
-                ContextSentence(
+                WordContextSentence(
                     japanese=japanese_sentence,
                     english=english_sentence
                 )

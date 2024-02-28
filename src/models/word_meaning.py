@@ -8,10 +8,10 @@ from src.database import Base
 
 
 class WordMeaning(Base):
-    __tablename__ = "word_meaning"
+    __tablename__ = "word_meanings"
 
     id = Column(Integer, primary_key=True, index=True)
-    word_id = Column(Integer, ForeignKey("word.id", ondelete="CASCADE"))
+    word_id = Column(Integer, ForeignKey("words.id", ondelete="CASCADE"))
     meaning = Column(String)
     is_primary = Column(Boolean)
     explanation = Column(String)

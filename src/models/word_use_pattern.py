@@ -8,13 +8,13 @@ from src.database import Base
 
 
 class WordUsePattern(Base):
-    __tablename__ = "word_use_pattern"
+    __tablename__ = "word_use_patterns"
 
     id = Column(Integer, primary_key=True, index=True)
-    word_id = Column(Integer, ForeignKey("word.id", ondelete="CASCADE"))
+    word_id = Column(Integer, ForeignKey("words.id", ondelete="CASCADE"))
     pattern = Column(String)
-    example_japanese = Column(String)
-    example_english = Column(String)
+    japanese = Column(String)
+    english = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     word = relationship("Word", back_populates="use_patterns", uselist=False)
