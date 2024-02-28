@@ -1,5 +1,8 @@
 import requests
 import logging
+
+from bs4 import BeautifulSoup
+
 logging.basicConfig(level=logging.INFO, filename="logs/kanji_parser.log", filemode="w")
 
 from src.crud import CrudWKRadical, CrudKanjiReading, CrudKanjiMeaning, CrudKanjiRadical, CrudKanji, CrudWord
@@ -14,20 +17,31 @@ class AudioType:
     MPEG = "mpeg"
 
 
-class UsePattern:
-    def __init__(self, pattern: str, example: str) -> None:
-        self.pattern = pattern
-        self.example = example
-
-
-class ContextSentence:
+class Sentence:
     """
-    Class representing a context sentence.
+    Class representing a sentence.
     There are two attributes: japanese and english texts.
     """
     def __init__(self, japanese: str, english: str) -> None:
         self.japanese = japanese
         self.english = english
+
+
+class UsePatternExample(Sentence):
+    def __init__(self, japanese: str, english: str) -> None:
+        super().__init__(japanese, english)
+
+
+class UsePattern:
+    def __init__(self, pattern: str, example: UsePatternExample) -> None:
+        self.pattern = pattern
+        self.example = example
+
+
+class ContextSentence(Sentence):
+    def __init__(self, japanese: str, english: str) -> None:
+        super().__init__(japanese, english)
+
 
 class WordParser(BaseParser):
     def __init__(self, is_download_audio: bool = True) -> None:
@@ -138,8 +152,37 @@ class WordParser(BaseParser):
         return file_path
 
     def _get_use_patterns(self, soup) -> list[UsePattern]:
-        """"""
-        pass
+        """
+        Get a list of the use patterns for the word.
+
+        Parameters:
+            soup: BeautifulSoup object.
+
+        Returns:
+            use_patterns: list[UsePattern] - list of use patterns.
+        """
+        use_patterns: list[UsePattern] = []
+
+        use_pattern_list = soup.find_all("a", class_="subject-collocations__pattern-name")
+        example_lists = soup.find_all("li", class_="subject-collocations__pattern-collocation")
+
+        for use_pattern, example_list in zip(use_pattern_list, example_lists):
+            for example_block in example_list.find_all("div", class_="context-sentences"):
+                japanese_sentence, english_sentence = example_block.find_all("p")
+                japanese_sentence, english_sentence = japanese_sentence.text.strip(), english_sentence.text.strip()
+
+                use_pattern_example = UsePatternExample(
+                    japanese=japanese_sentence,
+                    english=english_sentence
+                )
+
+                use_patterns.append(UsePattern(
+                    pattern=use_pattern.text.strip(),
+                    example=use_pattern_example
+                ))
+
+        return use_patterns
+
 
     def _get_context_sentences(self, soup) -> list[ContextSentence]:
         """
