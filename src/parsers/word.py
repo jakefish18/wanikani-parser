@@ -14,6 +14,21 @@ class AudioType:
     MPEG = "mpeg"
 
 
+class UsePattern:
+    def __init__(self, pattern: str, example: str) -> None:
+        self.pattern = pattern
+        self.example = example
+
+
+class ContextSentence:
+    """
+    Class representing a context sentence.
+    There are two attributes: japanese and english texts.
+    """
+    def __init__(self, japanese: str, english: str) -> None:
+        self.japanese = japanese
+        self.english = english
+
 class WordParser(BaseParser):
     def __init__(self, is_download_audio: bool = True) -> None:
         super().__init__()
@@ -78,6 +93,10 @@ class WordParser(BaseParser):
         if self.is_download_audio:
             reading_audio_file_path = self._download_reading_audio(soup, AudioType.MPEG, symbols)
 
+        context_sentences: list[ContextSentence] = self._get_context_sentences(soup)
+        use_patterns: list[UsePattern] = self._get_use_patterns(soup)
+
+
     def _get_reading(self, soup):
         """
         Get word reading from the soup.
@@ -118,9 +137,34 @@ class WordParser(BaseParser):
 
         return file_path
 
-    def _get_context_sentences(self, soup):
+    def _get_use_patterns(self, soup) -> list[UsePattern]:
         """"""
         pass
+
+    def _get_context_sentences(self, soup) -> list[ContextSentence]:
+        """
+        Get a list of contextual sentences for the word.
+
+        Args:
+            soup: BeautifulSoup object
+
+        Returns:
+            context_sentences: list[ContextSentence] - list of contextual sentences.
+        """
+        context_sentences = []
+
+        for sentence_block in soup.find_all("div", class_="subject-section__text subject-section__text--grouped"):
+            japanese_sentence, english_sentence = sentence_block.find_all("p")
+            japanese_sentence, english_sentence = japanese_sentence.text.strip(), english_sentence.text.strip()
+
+            context_sentences.append(
+                ContextSentence(
+                    japanese=japanese_sentence,
+                    english=english_sentence
+                )
+            )
+
+        return context_sentences
 
 
 if __name__ == "__main__":
