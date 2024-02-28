@@ -155,7 +155,11 @@ class BaseParser:
         """
         mnemonic_section = soup.find("section", class_=mnemonic_section_class)
 
-        mnemonic = mnemonic_section.find("p", class_="subject-section__text").text
+        mnemonic = ""
+
+        for mnemonic_p in mnemonic_section.find_all("p", class_="subject-section__text"):
+            mnemonic += mnemonic_p
+
         hint = mnemonic_section.find("p", class_="subject-hint__text")
 
         if hint:
