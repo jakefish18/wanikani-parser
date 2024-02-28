@@ -158,7 +158,7 @@ class BaseParser:
         mnemonic = ""
 
         for mnemonic_p in mnemonic_section.find_all("p", class_="subject-section__text"):
-            mnemonic += mnemonic_p
+            mnemonic += mnemonic_p.text
 
         hint = mnemonic_section.find("p", class_="subject-hint__text")
 
@@ -185,3 +185,18 @@ class BaseParser:
         """
         highlighted_text = text.replace(word_to_highlight, word_to_highlight.upper())
         return highlighted_text
+
+    def _download_file(self, file_path_to_save: str, file_url: str) -> None:
+        """
+        Downloads the file from the provided url.
+        File will be saved in the file_path_to_save.
+
+        Parameters:
+            file_path_to_save: str - file path to save.
+            file_url: str - file url to download from.
+
+        Returns:
+            None
+        """
+        with open(file_path_to_save, "wb") as audio_file:
+            audio_file.write(requests.get(file_url).content)

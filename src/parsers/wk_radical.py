@@ -72,8 +72,7 @@ class WKRadicalsParser(BaseParser):
             symbol_image_url = symbol_image_element.get("src")
 
             if is_download_image:
-                with open(f"output/images/{meaning}.svg", "wb") as image_file:
-                    image_file.write(requests.get(symbol_image_url).content)
+                self._download_file(symbol_image_url, f"output/images/{meaning}.svg")
 
         # Highlighting radical meaning in mnemonic with the upper case.
         highlighted_radicals = self._get_highlighted_radicals(soup)
