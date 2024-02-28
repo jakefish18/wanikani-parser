@@ -2,6 +2,7 @@
 import datetime
 
 from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy.orm import relationship
 
 from src.database import Base
 
@@ -11,8 +12,11 @@ class Word(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String, unique=True, index=True)
-    word = Column(String)
-    meaning = Column(String)
-    mnemonic = Column(String)
+    symbols = Column(String)
+    reading = Column(String)
+    reading_audio_filename = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+    context_sentences = relationship("WordContextSentence", back_populates="word")
+    meanings = relationship("WordMeaning", back_populates="word")
+    use_patterns = relationship("WordUsePattern", back_populates="word")

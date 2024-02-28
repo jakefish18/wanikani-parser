@@ -35,6 +35,7 @@ class BaseParser:
         self.radical_highlight_class_name = "radical-highlight"
         self.kanji_highlight_class_name = "kanji-highlight"
         self.reading_highlight_class_name = "reading-highlight"
+        self.vocabulary_highlight_class_name = "vocabulary-highlight"
 
     def _get_page_soup(self, page_url: str) -> BeautifulSoup:
         """
@@ -127,6 +128,12 @@ class BaseParser:
         Getting the highlighted kanji from the soup.
         """
         return self._get_highlighted_words(soup, "span", self.kanji_highlight_class_name)
+
+    def _get_highlighted_vocabulary(self, soup: BeautifulSoup) -> list[str]:
+        """
+        Get the highlighted vocabulary from the soup.
+        """
+        return self._get_highlighted_words(soup, "span", self.vocabulary_highlight_class_name)
 
     def _get_highlighted_readings(self, soup: BeautifulSoup) -> list[str]:
         """
