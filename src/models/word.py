@@ -11,6 +11,7 @@ class Word(Base):
     __tablename__ = "words"
 
     id = Column(Integer, primary_key=True, index=True)
+    level = Column(Integer)
     url = Column(String, unique=True, index=True)
     symbols = Column(String)
     reading = Column(String)

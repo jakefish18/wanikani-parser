@@ -7,6 +7,6 @@ from src.crud.base import CrudBase
 from src.models import WordUsePattern
 
 
-class CrudWordUsePatterns(CrudBase[WordUsePattern]):
+class CrudWordUsePattern(CrudBase[WordUsePattern]):
     def __init__(self, Model: type[WordUsePattern]):
         super().__init__(Model)

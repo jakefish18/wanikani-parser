@@ -18,3 +18,7 @@ class CrudWord(CrudBase[Word]):
     def get_word_by_url(self, db: Session, url: str) -> Word:
         """Get a word by its url."""
         return db.query(Word).filter(Word.url == url).first()
+    
+    def get_words_before_level(self, db: Session, before_level: int) -> list[Word]:
+        """Get words by the level."""
+        return db.query(Word).filter(Word.level <= before_level).all()

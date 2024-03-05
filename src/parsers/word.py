@@ -95,9 +95,10 @@ class WordParser(BaseParser):
 
         reading = self._get_reading(soup)
         reading_explanation: Mnemonic = self._get_mnemonic(soup, "subject-section--reading")
+        reading_audio_name = ""
 
         if self.is_download_audio:
-            self._download_reading_audio(soup, symbols, AudioType.MPEG)
+            reading_audio_name = self._download_reading_audio(soup, symbols, AudioType.MPEG)
 
         context_sentences: list[WordContextSentence] = self._get_context_sentences(soup)
         use_patterns: list[WordUsePattern] = self._get_use_patterns(soup)
@@ -107,9 +108,10 @@ class WordParser(BaseParser):
             # Insert word.
             word = self.crud_word.create(db, Word(
                 url=word_page_url,
+                level=level,
                 symbols=symbols,
                 reading=reading,
-                reading_audio_filename=f"audio_{symbols}.{AudioType.MPEG}"
+                reading_audio_filename=reading_audio_name
             ))
 
             # Insert context sentences.
@@ -146,7 +148,7 @@ class WordParser(BaseParser):
         """
         return soup.find("div", class_="reading-with-audio__reading").text.strip()
 
-    def _download_reading_audio(self, soup, symbols: str, prefered_file_type: str) -> str:
+    def _download_reading_audio(self, soup, symbols: str, prefered_file_type: str) -> str | None:
         """
         Get reading audio.
         There are two audio for the vocabulary word:
@@ -161,6 +163,10 @@ class WordParser(BaseParser):
             audio_file_name: str - name of the audio file.
         """
         audio_block = soup.find("audio", class_="reading-with-audio__audio")
+
+        if not audio_block:
+            return None
+
         webm_audio_element, mpeg_audio_element = audio_block.find_all("source")
         downloading_audio_url = ""
 
@@ -172,10 +178,11 @@ class WordParser(BaseParser):
             case _:
                 raise ValueError(f"There is no type {prefered_file_type} for audio.")
 
-        file_path = f"output/audio/audio_{symbols}.{prefered_file_type}"
+        file_name = f"audio_{symbols}.{prefered_file_type}"
+        file_path = f"output/audio/{file_name}"
         self._download_file(file_path, downloading_audio_url)
 
-        return file_path
+        return file_name
 
     def _get_use_patterns(self, soup) -> list[WordUsePattern]:
         """
@@ -189,8 +196,8 @@ class WordParser(BaseParser):
         """
         use_patterns: list[WordUsePattern] = []
 
-        use_pattern_list = soup.find_all("a", class_="subject-collocations__pattern-name")
-        example_lists = soup.find_all("li", class_="subject-collocations__pattern-collocation")
+        use_pattern_list = soup.find_all("a", class_="subject-collocations__pattern-name") or []
+        example_lists = soup.find_all("li", class_="subject-collocations__pattern-collocation") or []
 
         for use_pattern, example_list in zip(use_pattern_list, example_lists):
             for example_block in example_list.find_all("div", class_="context-sentences"):

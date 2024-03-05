@@ -1,3 +1,6 @@
+import sys
+sys.path.append('..')
+
 # Logging.
 import logging
 logging.basicConfig(level=logging.INFO, filename="logs/logs.log", filemode="w")

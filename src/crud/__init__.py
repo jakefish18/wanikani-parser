@@ -5,5 +5,5 @@ from .kanji_meaning import CrudKanjiMeaning
 from .kanji_radical import CrudKanjiRadical
 from .word import CrudWord
 from .word_meaning import CrudWordMeaning
-from .word_use_pattern import CrudWordUsePatterns
+from .word_use_pattern import CrudWordUsePattern
 from .word_context_sentence import CrudWordContextSentence
