@@ -75,10 +75,16 @@ class WordParser(BaseParser):
             soup = await self._get_page_soup(word_list_page_url)
             word_page_urls = self._get_element_links(soup, self.word_page_link_class)
 
+            total_word_count = len(word_page_urls)
+
             for i, word_page_url in enumerate(word_page_urls):
                 if not self._is_word_exists(word_page_url):
                     tasks.append(
-                        asyncio.create_task(self._parse_word_page(word_page_url))
+                        asyncio.create_task(
+                            self._parse_word_page(
+                                word_page_url, i + 1, total_word_count
+                            )
+                        )
                     )
                 else:
                     logging.warning(f"{word_page_url} already exists in the database.")
@@ -90,7 +96,9 @@ class WordParser(BaseParser):
         with SessionLocal() as db:
             return self.crud_word.is_word_by_url(db, url)
 
-    async def _parse_word_page(self, word_page_url: str) -> Word:
+    async def _parse_word_page(
+        self, word_page_url: str, i: int, total_word_count: int
+    ) -> Word:
         """
         Parsing the word info from the page.
 
@@ -165,7 +173,7 @@ class WordParser(BaseParser):
 
             self.crud_word_use_pattern.create_many(db, use_patterns)
 
-        logging.info(f"Processed {word_page_url}")
+        logging.info(f"Processed {word_page_url} [{i}/{total_word_count}]")
 
     def _get_word_types(self, soup):
         """
