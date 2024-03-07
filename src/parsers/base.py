@@ -1,3 +1,4 @@
+import aiohttp
 import requests
 from bs4 import BeautifulSoup
 
@@ -46,17 +47,18 @@ class BaseParser:
         self.reading_highlight_class_name = "reading-highlight"
         self.vocabulary_highlight_class_name = "vocabulary-highlight"
 
-    def _get_page_soup(self, page_url: str) -> BeautifulSoup:
+    async def _get_page_soup(self, page_url: str) -> BeautifulSoup:
         """
         Getting a page html and loading into a BeautifulSoup object.
 
         Parameters:
             page_url: str - the url of the page to load
         """
-        response = requests.get(page_url, headers=self.request_headers)
-        page_html = response.text
-        soup = BeautifulSoup(page_html, features="html.parser")
-        return soup
+        async with aiohttp.ClientSession(headers=self.request_headers) as session:
+            async with session.get(page_url) as resp:
+                page_html = await resp.text()
+                soup = BeautifulSoup(page_html, features="html.parser")
+                return soup
 
     def _get_element_links(
         self, soup: BeautifulSoup, element_class_name: str

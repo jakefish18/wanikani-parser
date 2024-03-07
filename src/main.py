@@ -1,3 +1,4 @@
+import asyncio
 import sys
 
 sys.path.append("..")
@@ -17,4 +18,6 @@ Base.metadata.create_all(engine)
 from src.parsers import KanjiParser, WKRadicalsParser, WordParser
 
 word_parser = WordParser(is_download_audio=False)
-word_parser.run()
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(word_parser.run())
