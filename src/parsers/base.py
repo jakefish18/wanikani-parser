@@ -1,5 +1,4 @@
 import requests
-
 from bs4 import BeautifulSoup
 
 from src.core import settings
@@ -10,6 +9,7 @@ class Mnemonic:
         self.mnemonic = mnemonic
         self.hint = hint
 
+
 class Meaning:
     def __init__(self, meaning: str, is_primary: bool = False) -> None:
         self.meaning = meaning
@@ -17,7 +17,9 @@ class Meaning:
 
 
 class Reading:
-    def __init__(self, reading: str, reading_type: str, is_primary: bool = False) -> None:
+    def __init__(
+        self, reading: str, reading_type: str, is_primary: bool = False
+    ) -> None:
         self.reading = reading
         self.type = reading_type
         self.is_primary = is_primary
@@ -28,7 +30,14 @@ class BaseParser:
         # Difficulty levels are used while parsing.
         # For example, a radicals list page have the next url:
         # https://wanikani.com/radicals?difficulty=pleasant
-        self.difficulty_levels = ["pleasant", "painful", "death", "hell", "paradise", "reality"]
+        self.difficulty_levels = [
+            "pleasant",
+            "painful",
+            "death",
+            "hell",
+            "paradise",
+            "reality",
+        ]
         self.request_headers = settings.request_headers
 
         # Highlighting class names.
@@ -49,7 +58,9 @@ class BaseParser:
         soup = BeautifulSoup(page_html, features="html.parser")
         return soup
 
-    def _get_element_links(self, soup: BeautifulSoup, element_class_name: str) -> list[str]:
+    def _get_element_links(
+        self, soup: BeautifulSoup, element_class_name: str
+    ) -> list[str]:
         """
         Getting the all links from a page to a source page of a radical, kanji or word.
         The function requires the class name of the elements to search.
@@ -89,17 +100,25 @@ class BaseParser:
         meanings = []
 
         for div_meaning in soup.find_all("div", class_="subject-section__meanings"):
-            meaning_type = div_meaning.find("h2", class_="subject-section__meanings-title").text
-            meaning_text = div_meaning.find("p", class_="subject-section__meanings-items").text
+            meaning_type = div_meaning.find(
+                "h2", class_="subject-section__meanings-title"
+            ).text
+            meaning_text = div_meaning.find(
+                "p", class_="subject-section__meanings-items"
+            ).text
 
             if meaning_type == "Primary":
                 meanings.append(Meaning(meaning=meaning_text, is_primary=True))
-            else:
-                meanings.extend([Meaning(meaning=meaning) for meaning in meaning_text.split(", ")])
+            elif meaning_type != "WordType":
+                meanings.extend(
+                    [Meaning(meaning=meaning) for meaning in meaning_text.split(", ")]
+                )
 
         return meanings
 
-    def _get_highlighted_words(self, soup: BeautifulSoup, tag_name: str, class_name: str) -> list[str]:
+    def _get_highlighted_words(
+        self, soup: BeautifulSoup, tag_name: str, class_name: str
+    ) -> list[str]:
         """
         Getting all the highlighted words from a soup.
 
@@ -121,31 +140,41 @@ class BaseParser:
         """
         Getting the highlighted radicals from the soup.
         """
-        return self._get_highlighted_words(soup, "span", self.radical_highlight_class_name)
+        return self._get_highlighted_words(
+            soup, "span", self.radical_highlight_class_name
+        )
 
     def _get_highlighted_kanji(self, soup: BeautifulSoup) -> list[str]:
         """
         Getting the highlighted kanji from the soup.
         """
-        return self._get_highlighted_words(soup, "span", self.kanji_highlight_class_name)
+        return self._get_highlighted_words(
+            soup, "span", self.kanji_highlight_class_name
+        )
 
     def _get_highlighted_vocabulary(self, soup: BeautifulSoup) -> list[str]:
         """
         Get the highlighted vocabulary from the soup.
         """
-        return self._get_highlighted_words(soup, "span", self.vocabulary_highlight_class_name)
+        return self._get_highlighted_words(
+            soup, "span", self.vocabulary_highlight_class_name
+        )
 
     def _get_highlighted_readings(self, soup: BeautifulSoup) -> list[str]:
         """
         Getting the highlighted readings from the soup.
         """
-        return self._get_highlighted_words(soup, "span", self.reading_highlight_class_name)
+        return self._get_highlighted_words(
+            soup, "span", self.reading_highlight_class_name
+        )
 
     def _get_element_level(self, soup: BeautifulSoup) -> int:
         """
         Getting the radical, kanji or word level from the soup.
         """
-        return soup.find("a", class_="page-header__icon page-header__icon--level").text.strip()
+        return soup.find(
+            "a", class_="page-header__icon page-header__icon--level"
+        ).text.strip()
 
     def _get_mnemonic(self, soup, mnemonic_section_class: str) -> Mnemonic:
         """
@@ -164,7 +193,9 @@ class BaseParser:
 
         mnemonic = ""
 
-        for mnemonic_p in mnemonic_section.find_all("p", class_="subject-section__text"):
+        for mnemonic_p in mnemonic_section.find_all(
+            "p", class_="subject-section__text"
+        ):
             mnemonic += mnemonic_p.text
 
         hint = mnemonic_section.find("p", class_="subject-hint__text")
@@ -174,10 +205,7 @@ class BaseParser:
         else:
             hint = ""
 
-        return Mnemonic(
-            mnemonic=mnemonic,
-            hint=hint
-        )
+        return Mnemonic(mnemonic=mnemonic, hint=hint)
 
     def _highlight_text(self, text: str, word_to_highlight: str) -> str:
         """

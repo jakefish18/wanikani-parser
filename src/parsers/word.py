@@ -107,16 +107,13 @@ class WordParser(BaseParser):
             soup, "subject-section--meaning"
         )
 
+        types = self._get_word_types(soup)
+
         reading = self._get_reading(soup)
         reading_explanation: Mnemonic = self._get_mnemonic(
             soup, "subject-section--reading"
         )
-        reading_audio_name = ""
-
-        if self.is_download_audio:
-            reading_audio_name = self._download_reading_audio(
-                soup, symbols, AudioType.MPEG
-            )
+        reading_audio_name = self._download_reading_audio(soup, symbols, AudioType.MPEG)
 
         context_sentences: list[WordContextSentence] = self._get_context_sentences(soup)
         use_patterns: list[WordUsePattern] = self._get_use_patterns(soup)
@@ -133,6 +130,7 @@ class WordParser(BaseParser):
                     reading=reading,
                     reading_explanation=reading_explanation.mnemonic,
                     reading_audio_filename=reading_audio_name,
+                    types=types,
                 ),
             )
 
@@ -161,6 +159,23 @@ class WordParser(BaseParser):
                 use_pattern.word_id = word.id
 
             self.crud_word_use_pattern.create_many(db, use_patterns)
+
+    def _get_word_types(self, soup):
+        """
+        Get word types from the soup.
+        """
+        for div_meaning in soup.find_all("div", class_="subject-section__meanings"):
+            meaning_type = div_meaning.find(
+                "h2", class_="subject-section__meanings-title"
+            ).text
+            meaning_text = div_meaning.find(
+                "p", class_="subject-section__meanings-items"
+            ).text
+
+            if meaning_type.strip() == "Word Type":
+                return meaning_text
+
+        return ""
 
     def _get_reading(self, soup):
         """
@@ -192,20 +207,24 @@ class WordParser(BaseParser):
         if not audio_block:
             return None
 
-        webm_audio_element, mpeg_audio_element = audio_block.find_all("source")
-        downloading_audio_url = ""
-
-        match prefered_file_type:
-            case AudioType.WEBM:
-                downloading_audio_url = webm_audio_element.get("src")
-            case AudioType.MPEG:
-                downloading_audio_url = mpeg_audio_element.get("src")
-            case _:
-                raise ValueError(f"There is no type {prefered_file_type} for audio.")
-
         file_name = f"audio_{symbols}.{prefered_file_type}"
-        file_path = f"output/audio/{file_name}"
-        self._download_file(file_path, downloading_audio_url)
+
+        if self.is_download_audio:
+            webm_audio_element, mpeg_audio_element = audio_block.find_all("source")
+            downloading_audio_url = ""
+
+            match prefered_file_type:
+                case AudioType.WEBM:
+                    downloading_audio_url = webm_audio_element.get("src")
+                case AudioType.MPEG:
+                    downloading_audio_url = mpeg_audio_element.get("src")
+                case _:
+                    raise ValueError(
+                        f"There is no type {prefered_file_type} for audio."
+                    )
+
+            file_path = f"output/audio/{file_name}"
+            self._download_file(file_path, downloading_audio_url)
 
         return file_name
 

@@ -18,6 +18,7 @@ class Word(Base):
     reading = Column(String)
     reading_explanation = Column(String)
     reading_audio_filename = Column(String)
+    types = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     context_sentences = relationship("WordContextSentence", back_populates="word")

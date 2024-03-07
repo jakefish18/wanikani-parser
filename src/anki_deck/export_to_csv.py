@@ -218,6 +218,7 @@ def get_words_csv_rows(before_level: int) -> list[list[str]]:
                 word_meaning_explanation,
                 word_context_sentences,
                 word_use_patterns,
+                word.types,
             ]
         )
 
