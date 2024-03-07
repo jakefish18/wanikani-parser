@@ -1,10 +1,15 @@
 import logging
 
-from src.crud import CrudWord, CrudWordContextSentence, CrudWordMeaning, CrudWordUsePatterns
-from src.parsers.base import BaseParser, Meaning, Mnemonic
-from src.models import Word, WordMeaning, WordUsePattern, WordContextSentence
-from src.database import SessionLocal
 from src.core import settings
+from src.crud import (
+    CrudWord,
+    CrudWordContextSentence,
+    CrudWordMeaning,
+    CrudWordUsePattern,
+)
+from src.database import SessionLocal
+from src.models import Word, WordContextSentence, WordMeaning, WordUsePattern
+from src.parsers.base import BaseParser, Meaning, Mnemonic
 
 
 class AudioType:
@@ -17,6 +22,7 @@ class Sentence:
     Class representing a sentence.
     There are two attributes: japanese and english texts.
     """
+
     def __init__(self, japanese: str, english: str) -> None:
         self.japanese = japanese
         self.english = english
@@ -45,12 +51,14 @@ class WordParser(BaseParser):
         self.is_download_audio = is_download_audio
 
         # The class name of the "a" tag which has link to the wrod page.
-        self.word_page_link_class = ("subject-character subject-character--vocabulary "
-                                     "subject-character--grid subject-character--unlocked")
+        self.word_page_link_class = (
+            "subject-character subject-character--vocabulary "
+            "subject-character--grid subject-character--unlocked"
+        )
 
         self.crud_word = CrudWord(Word)
         self.crud_word_context_sentence = CrudWordContextSentence(WordContextSentence)
-        self.crud_word_use_pattern = CrudWordUsePatterns(WordUsePattern)
+        self.crud_word_use_pattern = CrudWordUsePattern(WordUsePattern)
         self.crud_word_meaning = CrudWordMeaning(WordMeaning)
 
     def run(self) -> None:
@@ -58,7 +66,9 @@ class WordParser(BaseParser):
         Run the parser.
         """
         for difficulty_level in self.difficulty_levels:
-            word_list_page_url = f"{settings.WANIKANI_BASE_URL}/vocabulary?difficulty={difficulty_level}"
+            word_list_page_url = (
+                f"{settings.WANIKANI_BASE_URL}/vocabulary?difficulty={difficulty_level}"
+            )
             soup = self._get_page_soup(word_list_page_url)
             word_page_urls = self._get_element_links(soup, self.word_page_link_class)
             total_word_count = len(word_page_urls)
@@ -88,17 +98,25 @@ class WordParser(BaseParser):
         soup = self._get_page_soup(word_page_url)
 
         level = self._get_element_level(soup)
-        symbols = soup.find("span", class_="page-header__icon page-header__icon--vocabulary").text.strip()
+        symbols = soup.find(
+            "span", class_="page-header__icon page-header__icon--vocabulary"
+        ).text.strip()
 
         meanings: list[Meaning] = self._get_element_meanings(soup)
-        meaning_explanation: Mnemonic = self._get_mnemonic(soup, "subject-section--meaning")
+        meaning_explanation: Mnemonic = self._get_mnemonic(
+            soup, "subject-section--meaning"
+        )
 
         reading = self._get_reading(soup)
-        reading_explanation: Mnemonic = self._get_mnemonic(soup, "subject-section--reading")
+        reading_explanation: Mnemonic = self._get_mnemonic(
+            soup, "subject-section--reading"
+        )
         reading_audio_name = ""
 
         if self.is_download_audio:
-            reading_audio_name = self._download_reading_audio(soup, symbols, AudioType.MPEG)
+            reading_audio_name = self._download_reading_audio(
+                soup, symbols, AudioType.MPEG
+            )
 
         context_sentences: list[WordContextSentence] = self._get_context_sentences(soup)
         use_patterns: list[WordUsePattern] = self._get_use_patterns(soup)
@@ -106,13 +124,17 @@ class WordParser(BaseParser):
         # Insert all data into the database.
         with SessionLocal() as db:
             # Insert word.
-            word = self.crud_word.create(db, Word(
-                url=word_page_url,
-                level=level,
-                symbols=symbols,
-                reading=reading,
-                reading_audio_filename=reading_audio_name
-            ))
+            word = self.crud_word.create(
+                db,
+                Word(
+                    url=word_page_url,
+                    level=level,
+                    symbols=symbols,
+                    reading=reading,
+                    reading_explanation=reading_explanation.mnemonic,
+                    reading_audio_filename=reading_audio_name,
+                ),
+            )
 
             # Insert context sentences.
             for context_sentence in context_sentences:
@@ -123,12 +145,14 @@ class WordParser(BaseParser):
             # Insert meanings.
             meaning_bulk = []
             for meaning in meanings:
-                meaning_bulk.append(WordMeaning(
-                    word_id=word.id,
-                    meaning=meaning.meaning,
-                    is_primary=meaning.is_primary,
-                    explanation=meaning_explanation.mnemonic
-                ))
+                meaning_bulk.append(
+                    WordMeaning(
+                        word_id=word.id,
+                        meaning=meaning.meaning,
+                        is_primary=meaning.is_primary,
+                        explanation=meaning_explanation.mnemonic,
+                    )
+                )
 
             self.crud_word_meaning.create_many(db, meaning_bulk)
 
@@ -137,7 +161,6 @@ class WordParser(BaseParser):
                 use_pattern.word_id = word.id
 
             self.crud_word_use_pattern.create_many(db, use_patterns)
-
 
     def _get_reading(self, soup):
         """
@@ -148,7 +171,9 @@ class WordParser(BaseParser):
         """
         return soup.find("div", class_="reading-with-audio__reading").text.strip()
 
-    def _download_reading_audio(self, soup, symbols: str, prefered_file_type: str) -> str | None:
+    def _download_reading_audio(
+        self, soup, symbols: str, prefered_file_type: str
+    ) -> str | None:
         """
         Get reading audio.
         There are two audio for the vocabulary word:
@@ -196,22 +221,33 @@ class WordParser(BaseParser):
         """
         use_patterns: list[WordUsePattern] = []
 
-        use_pattern_list = soup.find_all("a", class_="subject-collocations__pattern-name") or []
-        example_lists = soup.find_all("li", class_="subject-collocations__pattern-collocation") or []
+        use_pattern_list = (
+            soup.find_all("a", class_="subject-collocations__pattern-name") or []
+        )
+        example_lists = (
+            soup.find_all("li", class_="subject-collocations__pattern-collocation")
+            or []
+        )
 
         for use_pattern, example_list in zip(use_pattern_list, example_lists):
-            for example_block in example_list.find_all("div", class_="context-sentences"):
+            for example_block in example_list.find_all(
+                "div", class_="context-sentences"
+            ):
                 japanese_sentence, english_sentence = example_block.find_all("p")
-                japanese_sentence, english_sentence = japanese_sentence.text.strip(), english_sentence.text.strip()
+                japanese_sentence, english_sentence = (
+                    japanese_sentence.text.strip(),
+                    english_sentence.text.strip(),
+                )
 
-                use_patterns.append(WordUsePattern(
-                    pattern=use_pattern.text.strip(),
-                    japanese=japanese_sentence,
-                    english=english_sentence
-                ))
+                use_patterns.append(
+                    WordUsePattern(
+                        pattern=use_pattern.text.strip(),
+                        japanese=japanese_sentence,
+                        english=english_sentence,
+                    )
+                )
 
         return use_patterns
-
 
     def _get_context_sentences(self, soup) -> list[ContextSentence]:
         """
@@ -225,14 +261,18 @@ class WordParser(BaseParser):
         """
         context_sentences = []
 
-        for sentence_block in soup.find_all("div", class_="subject-section__text subject-section__text--grouped"):
+        for sentence_block in soup.find_all(
+            "div", class_="subject-section__text subject-section__text--grouped"
+        ):
             japanese_sentence, english_sentence = sentence_block.find_all("p")
-            japanese_sentence, english_sentence = japanese_sentence.text.strip(), english_sentence.text.strip()
+            japanese_sentence, english_sentence = (
+                japanese_sentence.text.strip(),
+                english_sentence.text.strip(),
+            )
 
             context_sentences.append(
                 WordContextSentence(
-                    japanese=japanese_sentence,
-                    english=english_sentence
+                    japanese=japanese_sentence, english=english_sentence
                 )
             )
 

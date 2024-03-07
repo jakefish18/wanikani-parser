@@ -168,3 +168,4 @@ cython_debug/
 /src/output/*.csv
 /src/logs/*
 /src/output/audio/*
+/src/output/audio.zip

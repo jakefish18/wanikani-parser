@@ -164,6 +164,11 @@ def get_word_meanings(word: Word) -> str:
     return ", ".join(word_meanings)
 
 
+def get_word_meaning_explanation(word: Word) -> str:
+    """Get word meaning explanation."""
+    return word.meanings[0].explanation
+
+
 def get_word_context_sentences(word: Word) -> str:
     """Get word context sentences."""
     word_context_sentences = []
@@ -194,11 +199,12 @@ def get_words_csv_rows(before_level: int) -> list[list[str]]:
     which have lower or equal level than before_level.
     """
     db = SessionLocal()
-    word_models = crud_word.get_words_before_level(db, before_level)
+    word_models: list[Word] = crud_word.get_words_before_level(db, before_level)
     word_rows = []
 
     for word in word_models:
         word_meanings = get_word_meanings(word)
+        word_meaning_explanation = get_word_meaning_explanation(word)
         word_context_sentences = get_word_context_sentences(word)
         word_use_patterns = get_word_use_patterns(word)
         word_rows.append(
@@ -206,7 +212,10 @@ def get_words_csv_rows(before_level: int) -> list[list[str]]:
                 word.level,
                 word.symbols,
                 word.reading,
+                word.reading_audio_filename,
+                word.reading_explanation,
                 word_meanings,
+                word_meaning_explanation,
                 word_context_sentences,
                 word_use_patterns,
             ]

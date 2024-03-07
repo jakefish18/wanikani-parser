@@ -1,4 +1,5 @@
 """A japanese vocabulary word SQLAlchemy model."""
+
 import datetime
 
 from sqlalchemy import Column, DateTime, Integer, String
@@ -15,6 +16,7 @@ class Word(Base):
     url = Column(String, unique=True, index=True)
     symbols = Column(String)
     reading = Column(String)
+    reading_explanation = Column(String)
     reading_audio_filename = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
