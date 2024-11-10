@@ -110,6 +110,11 @@ class WordParser(BaseParser):
         """
         soup = await self._get_page_soup(word_page_url)
 
+        if soup == None:
+            return None
+
+        logging.info(f"Processing {word_page_url} [{i}/{total_word_count}]")
+
         level = self._get_element_level(soup)
         symbols = soup.find(
             "span", class_="page-header__icon page-header__icon--vocabulary"

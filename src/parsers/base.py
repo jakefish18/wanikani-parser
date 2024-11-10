@@ -1,5 +1,6 @@
 import aiohttp
 import requests
+import logging
 from bs4 import BeautifulSoup
 
 from src.core import settings
@@ -47,7 +48,7 @@ class BaseParser:
         self.reading_highlight_class_name = "reading-highlight"
         self.vocabulary_highlight_class_name = "vocabulary-highlight"
 
-    async def _get_page_soup(self, page_url: str) -> BeautifulSoup:
+    async def _get_page_soup(self, page_url: str) -> BeautifulSoup | None:
         """
         Getting a page html and loading into a BeautifulSoup object.
 
@@ -56,6 +57,11 @@ class BaseParser:
         """
         async with aiohttp.ClientSession(headers=self.request_headers) as session:
             async with session.get(page_url) as resp:
+                
+                if resp.status != 200:
+                    logging.critical(f"Response code for {page_url} is {resp.status}!!!")
+                    return None
+                
                 page_html = await resp.text()
                 soup = BeautifulSoup(page_html, features="html.parser")
                 return soup

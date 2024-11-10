@@ -75,6 +75,9 @@ class KanjiParser(BaseParser):
         """
         soup = await self._get_page_soup(kanji_page_url)
 
+        if soup == None:
+            return None
+
         level = self._get_element_level(soup)
         symbol = soup.find(
             "span", class_="page-header__icon page-header__icon--kanji"

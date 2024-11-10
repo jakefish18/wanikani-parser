@@ -80,6 +80,9 @@ class WKRadicalsParser(BaseParser):
         """
         soup = await self._get_page_soup(radical_page_url)
 
+        if soup == None:
+            return None
+
         level = await self._get_element_level(soup)
         meaning = soup.find("p", class_="subject-section__meanings-items").text.strip()
         mnemonic = soup.find("p", class_="subject-section__text").text.strip()
