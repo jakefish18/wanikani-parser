@@ -9,7 +9,7 @@ from src.parsers.base import BaseParser
 
 
 class WKRadicalsParser(BaseParser):
-    def __init__(self):
+    def __init__(self,  is_download_image: bool = False):
         super().__init__()
 
         # The class names of the spans which are highlighted in the mnemonics.
@@ -23,8 +23,9 @@ class WKRadicalsParser(BaseParser):
         )
 
         self.crud_wk_radical = CrudWKRadical(WKRadical)
+        self.is_download_image = is_download_image
 
-    def run(self, is_download_image: bool = False) -> None:
+    def run(self) -> None:
         """
         Run the parser.
         """
@@ -47,8 +48,7 @@ class WKRadicalsParser(BaseParser):
                             self._parse_radical_page(
                                 radical_page_url,
                                 i,
-                                total_radical_count,
-                                is_download_image=is_download_image,
+                                total_radical_count
                             )
                         )
                     )
@@ -66,8 +66,7 @@ class WKRadicalsParser(BaseParser):
         self,
         radical_page_url: str,
         i: int,
-        total_radical_count: int,
-        is_download_image: bool = True,
+        total_radical_count: int
     ) -> WKRadical:
         """
         Parsing the radical info from page.
@@ -98,7 +97,7 @@ class WKRadicalsParser(BaseParser):
         if symbol_image_element:
             symbol_image_url = symbol_image_element.get("src")
 
-            if is_download_image:
+            if self.is_download_image:
                 self._download_file(symbol_image_url, f"output/images/{meaning}.svg")
 
         # Highlighting radical meaning in mnemonic with the upper case.
@@ -124,4 +123,4 @@ class WKRadicalsParser(BaseParser):
 if __name__ == "__main__":
     # Parsing and saving all the radicals into the csv file.
     wk_radicals_parser = WKRadicalsParser()
-    wk_radicals_parser.run(is_download_image=False)
+    wk_radicals_parser.run()
