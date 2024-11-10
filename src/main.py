@@ -19,7 +19,7 @@ Base.metadata.create_all(engine)
 from src.parsers import KanjiParser, WKRadicalsParser, WordParser
 
 word_parser = WordParser(is_download_audio=True)
-radicals_parser = WKRadicalsParser()
+radicals_parser = WKRadicalsParser(is_download_image=True)
 kanji_parser = KanjiParser()
 
 loop = asyncio.get_event_loop()
