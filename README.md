@@ -176,8 +176,9 @@ You're ready! Keep the parser for some time because it rechecks for missed radic
 ## Anki Deck Creation
 ```anki_deck_creator.py``` does not work yet. Seems like the library for generating anki decks have some troubles. Nevertheless, you can make your anki deck by `export_to_csv.py` script. Customize it for your needs by chaning `before_level` and `deck_element` variables.
 
-Example of possible anki cards:
+Example of possible anki cards:<br>
 ![Front side](images/card_question.png)
 ![Back side](images/card_answer.png)
 
+## PS
 DM me in Telegram if you have some questions.
